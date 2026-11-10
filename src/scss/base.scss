@@ -193,6 +193,40 @@
             }
         }
 
+        .pcr-eyedropper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            align-self: stretch;
+            min-width: 2.25em;
+            padding: 0 0.5em;
+            margin-top: 0.75em;
+            cursor: pointer;
+            color: variables.$palette-darkgray;
+            background: variables.$palette-snow-white;
+            border-radius: variables.$border-radius-mid;
+            transition: all 0.15s;
+
+            svg {
+                width: 1.1em;
+                height: 1.1em;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            &:hover {
+                filter: brightness(0.975);
+            }
+
+            &:focus {
+                @include variables.focus();
+            }
+        }
+
         .pcr-result {
             color: variables.$palette-darkgray;
             text-align: left;

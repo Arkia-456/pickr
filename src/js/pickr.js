@@ -3,6 +3,7 @@ import {parseToHSVA} from './utils/color';
 import {HSVaColor} from './utils/hsvacolor';
 import Moveable from './libs/moveable';
 import Selectable from './libs/selectable';
+import * as EyeDropper from './libs/eyedropper';
 import buildPickr from './template';
 import {createPopper} from 'nanopop';
 
@@ -30,6 +31,7 @@ export default class Pickr {
         'aria:btn:save': 'save and close',
         'aria:btn:cancel': 'cancel and close',
         'aria:btn:clear': 'clear and close',
+        'aria:btn:eyedropper': 'pick a color from the screen',
         'aria:input': 'color input field',
         'aria:palette': 'color selection area',
         'aria:hue': 'hue selection slider',
@@ -65,7 +67,8 @@ export default class Pickr {
         adjustableNumbers: true,
         showAlways: false,
 
-        closeWithKey: 'Escape'
+        closeWithKey: 'Escape',
+        eyedropperTargets: EyeDropper.DEFAULT_TARGETS
     };
 
     // Will be used to prevent specific actions during initialization
@@ -86,6 +89,13 @@ export default class Pickr {
     // Animation frame used for setup.
     // Will be cancelled in case of destruction.
     _setupAnimationFrame = null;
+
+    // Abort-controller of the currently open native eyedropper, if any
+    _eyeDropper = null;
+
+    // Set while the eyedropper is open (and briefly after) to keep
+    // the clicks / key-presses used to close it from closing pickr too
+    _eyeDropperActive = false;
 
     // UI Components
     _components = null;
@@ -388,6 +398,9 @@ export default class Pickr {
             // Clear color
             _.on(_root.interaction.clear, 'click', () => this._clearColor()),
 
+            // Pick a color from the screen
+            _.on(_root.interaction.eyedropper, 'click', () => this.openEyeDropper()),
+
             // Select last color on click
             _.on([
                 _root.interaction.cancel,
@@ -445,11 +458,11 @@ export default class Pickr {
                 _.on(_root.button, 'click', () => this.isOpen() ? this.hide() : this.show()),
 
                 // Close with escape key
-                _.on(document, 'keyup', e => this.isOpen() && (e.key === ck || e.code === ck) && this.hide()),
+                _.on(document, 'keyup', e => this.isOpen() && !this._eyeDropperActive && (e.key === ck || e.code === ck) && this.hide()),
 
                 // Cancel selecting if the user taps behind the color picker
                 _.on(document, ['touchstart', 'mousedown'], e => {
-                    if (this.isOpen() && !_.eventPath(e).some(el => el === _root.app || el === _root.button)) {
+                    if (this.isOpen() && !this._eyeDropperActive && !_.eventPath(e).some(el => el === _root.app || el === _root.button)) {
                         this.hide();
                     }
                 }, {capture: true})
@@ -674,6 +687,65 @@ export default class Pickr {
         return false;
     }
 
+    /**
+     * Opens an eyedropper with a pixel-level magnifier.
+     * Uses the native one (same as Chrome's <input type="color">, picks from anywhere on the screen)
+     * if available, otherwise picks from images / canvases / videos of the page (see eyedropperTargets).
+     * Must be called from a user gesture, e.g. a click handler.
+     * @returns {Promise<boolean>} Resolves to true if a color has been picked,
+     * false if the eyedropper was cancelled or isn't supported by the browser.
+     */
+    async openEyeDropper() {
+        if (!EyeDropper.isSupported() || this.options.disabled || this._eyeDropper) {
+            return false;
+        }
+
+        const controller = new AbortController();
+        this._eyeDropper = controller;
+        this._eyeDropperActive = true;
+
+        try {
+            const {sRGBHex} = await EyeDropper.pick({
+                signal: controller.signal,
+                targets: this.options.eyedropperTargets
+            });
+
+            // Instance might have been destroyed in the meantime
+            if (!this._root) {
+                return false;
+            }
+
+            const {values} = this._parseLocalColor(sRGBHex);
+            if (!values) {
+                return false;
+            }
+
+            // Screen pixels are always opaque
+            values[3] = 1;
+
+            // Update the color without emitting a change event with an unknown source,
+            // then update the output and emit it once with the correct one
+            this._root.interaction.result.blur();
+            this._recalc = false;
+            this.setHSVA(...values, true);
+            this._recalc = true;
+            this._updateOutput('eyedropper');
+            this._emit('changestop', 'eyedropper', this);
+            return true;
+        } catch {
+
+            // Cancelled by the user (Escape), aborted or no user activation
+            return false;
+        } finally {
+            if (this._eyeDropper === controller) {
+                this._eyeDropper = null;
+            }
+
+            // The click / key-up closing the eyedropper may reach the document right after it closed
+            setTimeout(() => this._eyeDropper || (this._eyeDropperActive = false), 250);
+        }
+    }
+
     applyColor(silent = false) {
         const {preview, button} = this._root;
 
@@ -707,6 +779,9 @@ export default class Pickr {
 
         // Cancel setup-frame if set
         cancelAnimationFrame(this._setupAnimationFrame);
+
+        // Close the eyedropper if it's still open
+        this._eyeDropper && this._eyeDropper.abort();
 
         // Unbind events
         this._eventBindings.forEach(args => _.off(...args));

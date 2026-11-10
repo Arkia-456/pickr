@@ -32,6 +32,7 @@ const themes = [
                     hex: true,
                     rgba: true,
                     hsva: true,
+                    eyedropper: true,
                     input: true,
                     clear: true,
                     save: true
@@ -62,6 +63,7 @@ const themes = [
                     hex: false,
                     rgba: false,
                     hsva: false,
+                    eyedropper: true,
                     input: true,
                     clear: true,
                     save: true
@@ -92,6 +94,7 @@ const themes = [
                     hex: false,
                     rgba: false,
                     hsva: false,
+                    eyedropper: true,
                     input: true,
                     clear: true,
                     save: true

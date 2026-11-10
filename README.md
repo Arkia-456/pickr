@@ -214,6 +214,7 @@ Where `source` can be
 * `slider` _- Any slider in the UI._
 * `input` _- The user input field._
 * `swatch` _- One of the swatches._
+* `eyedropper` _- A color picked from the screen with the eyedropper._
 
 ## Options
 ```javascript
@@ -309,6 +310,11 @@ const pickr = new Pickr({
     // To use it set the cursor on a position where a number is and scroll, use ctrl to make steps of five
     adjustableNumbers: true,
 
+    // Elements the eyedropper can pick from in browsers without the native EyeDropper API (Firefox, Safari).
+    // Either a selector or a function receiving an element and returning a boolean.
+    // Images and videos must be same-origin or served with CORS headers, otherwise the browser forbids reading them.
+    eyedropperTargets: 'img, canvas, video',
+
     // Show or hide specific components.
     // By default only the palette (and the save button) is visible.
     components: {
@@ -337,6 +343,9 @@ const pickr = new Pickr({
             cancel: false, // Display Cancel Button, resets the color to the previous state
             clear: false, // Display Clear Button; same as cancel, but keeps the window open
             save: false,  // Display Save Button,
+            eyedropper: false, // Display an eyedropper button with a pixel-level magnifier.
+            // Uses the native EyeDropper API if available (Chromium-based browsers), which picks from anywhere on the screen.
+            // Otherwise (Firefox, Safari) picks from images, canvases and videos of the page, see eyedropperTargets.
         },
     },
 
@@ -356,6 +365,7 @@ const pickr = new Pickr({
        'aria:btn:save': 'save and close',
        'aria:btn:cancel': 'cancel and close',
        'aria:btn:clear': 'clear and close',
+       'aria:btn:eyedropper': 'pick a color from the screen',
        'aria:input': 'color input field',
        'aria:palette': 'color selection area',
        'aria:hue': 'hue selection slider',
@@ -425,6 +435,7 @@ If `silent` is true (Default is false), the button won't change the current colo
 * pickr.setColorRepresentation(type`:String`)`:Boolean` _- Change the current color-representation. Valid options are `HEX`, `RGBA`, `HSVA`, `HSLA` and `CMYK`, returns false if type was invalid._
 * pickr.getColorRepresentation()`:String` _- Returns the currently used color-representation (eg. `HEXA`, `RGBA`...)_
 * pickr.applyColor(silent`:Boolean`)`:Pickr` _- Same as pressing the save button. If silent is true the `onSave` event won't be called._
+* pickr.openEyeDropper()`:Promise<Boolean>` _- Opens the eyedropper to pick a color from the screen (must be called from a user gesture, see `components.interaction.eyedropper`). Resolves to `true` if a color was picked, `false` if cancelled or unsupported._
 * pickr.addSwatch(color`:String`)`:Boolean` _- Adds a color to the swatch palette. Returns `true` if the color has been successful added to the palette._
 * pickr.removeSwatch(index`:Number`)`:Boolean`_- Removes a color from the swatch palette by its index, returns true if successful._
 

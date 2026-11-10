@@ -1,4 +1,5 @@
 import * as _ from './utils/utils';
+import * as EyeDropper from './libs/eyedropper';
 
 export default instance => {
 
@@ -46,6 +47,14 @@ export default instance => {
           <div class="pcr-swatches ${components.palette ? '' : 'pcr-last'}" :ref="swatches"></div>
 
           <div :obj="interaction" class="pcr-interaction" ${hidden(Object.keys(components.interaction).length)}>
+            <button :ref="eyedropper" class="pcr-eyedropper" type="button" ${hidden(components.interaction.eyedropper && EyeDropper.isSupported())} aria-label="${t('aria:btn:eyedropper')}" title="${t('aria:btn:eyedropper')}">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m2 22 1-1h3l9-9"/>
+                <path d="M3 21v-3l9-9"/>
+                <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>
+              </svg>
+            </button>
+
             <input :ref="result" class="pcr-result" type="text" spellcheck="false" ${hidden(components.interaction.input)} aria-label="${t('aria:input', 'color input field')}">
 
             <input :arr="options" class="pcr-type" data-type="HEXA" value="${lockOpacity ? 'HEX' : 'HEXA'}" type="button" ${hidden(components.interaction.hex)}>

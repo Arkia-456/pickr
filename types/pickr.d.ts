@@ -42,6 +42,8 @@ declare class Pickr {
 
     applyColor(silent?: boolean): Pickr;
 
+    openEyeDropper(): Promise<boolean>;
+
     addSwatch(color: string): boolean;
 
     removeSwatch(index: number): boolean;
@@ -71,6 +73,7 @@ declare namespace Pickr {
         closeWithKey?: string;
         position?: Position;
         adjustableNumbers?: boolean;
+        eyedropperTargets?: string | ((el: Element) => boolean);
 
         components?: {
             palette?: boolean;
@@ -88,6 +91,7 @@ declare namespace Pickr {
                 cancel?: boolean;
                 clear?: boolean;
                 save?: boolean;
+                eyedropper?: boolean;
             };
         };
 
@@ -102,6 +106,7 @@ declare namespace Pickr {
             'aria:btn:save'?: string;
             'aria:btn:cancel'?: string;
             'aria:btn:clear'?: string;
+            'aria:btn:eyedropper'?: string;
             'aria:input'?: string;
             'aria:palette'?: string;
             'aria:hue'?: string;
